@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <!-- The game folder, which the mod compiles against and installs into. build.ps1 finds it
+         through Steam and sets SALT_DIR; when building directly, set SALT_DIR yourself. -->
+    <GameDir Condition="'$(GameDir)' == '' and '$(SALT_DIR)' != ''">$(SALT_DIR)</GameDir>
+    <GameDir Condition="'$(GameDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Salt and Sanctuary</GameDir>
+  </PropertyGroup>
+</Project>

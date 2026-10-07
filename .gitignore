@@ -1,0 +1,16 @@
+bin/
+obj/
+*.user
+.vs/
+.vscode/
+
+# Release packages are built by GitHub Actions (scripts/Package.ps1).
+dist/
+
+# Decompiled game code: for reading only, never commit or publish it.
+salt-src/
+
+# Private notes and working files, not for the public repository.
+CLAUDE.md
+internal/
+screenshots/

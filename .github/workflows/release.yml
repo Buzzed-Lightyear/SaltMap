@@ -1,0 +1,40 @@
+# Builds SaltMap-<version>.zip on GitHub's Windows runners. The game is not needed: the
+# mod compiles against the reference stub in Reference/salt and MonoGame's NuGet package.
+#   Push a tag such as v0.2.0  -> a GitHub release with the zip attached.
+#   Run it by hand (Actions tab -> Release -> Run workflow) -> the zip as a build artifact.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # to create the release and attach the zip
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build and package
+        shell: pwsh
+        run: ./scripts/Package.ps1
+
+      - name: Keep the zip as a build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SaltMap
+          path: dist/*.zip
+
+      - name: Attach the zip to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true

@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>SaltMap</AssemblyName>
+    <RootNamespace>SaltMap</RootNamespace>
+    <Version>0.2.0</Version>
+    <!-- salt.exe is a 32-bit assembly -->
+    <PlatformTarget>x86</PlatformTarget>
+    <!-- With the game installed, compile against it and install into it after each build.
+         Without it (GitHub Actions), compile against the reference stub in Reference\salt
+         and MonoGame's NuGet package, and install nothing. -->
+    <UseGame Condition="'$(UseGame)' == '' and Exists('$(GameDir)\salt.exe')">true</UseGame>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The menu map's icon, drawn for this mod (not a game asset). -->
+    <EmbeddedResource Include="Resources\mapicon.png" LogicalName="SaltMap.mapicon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- .NET Framework parts: GDI+ decodes the map tiles, the JSON reader parses markers.js. -->
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization" />
+    <PackageReference Include="Lib.Harmony" Version="2.4.1" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseGame)' == 'true'">
+    <!-- Compiled against the installed game; neither file is copied or shipped. -->
+    <Reference Include="salt">
+      <HintPath>$(GameDir)\salt.exe</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MonoGame.Framework">
+      <HintPath>$(GameDir)\MonoGame.Framework.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseGame)' != 'true'">
+    <ProjectReference Include="..\Reference\salt\salt.csproj" Private="false" />
+    <PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.7.1.189" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <!-- Every build with the game installs the mod. Close the game first: it keeps the DLL locked. -->
+  <Target Name="DeployMod" AfterTargets="Build" Condition="'$(UseGame)' == 'true' and '$(SkipDeploy)' != 'true'">
+    <ItemGroup>
+      <ModFile Include="$(TargetDir)*.dll;$(TargetDir)*.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ModFile)" DestinationFolder="$(GameDir)\Mods" />
+    <Message Importance="high" Text="Installed to $(GameDir)\Mods" />
+  </Target>
+
+</Project>

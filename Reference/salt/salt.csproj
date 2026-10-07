@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A compile-time stand-in for the game's salt.exe, so the mod can be built where the game
+    is not installed (GitHub Actions). It declares only the public game members the mod
+    uses: names and signatures, no game code. At run time the mod binds to the real
+    salt.exe by name. scripts/Check-Stubs.ps1 checks every reference against the real game.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>salt</AssemblyName>
+    <RootNamespace>ProjectTower</RootNamespace>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <PlatformTarget>x86</PlatformTarget>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS0649;CS0169;CS0414</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MonoGame 3.7.1.189 is MIT licensed; the game ships the same version. -->
+    <PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.7.1.189" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>
