@@ -1,6 +1,7 @@
 // Every hook into the game lives in this file. Each one hands straight off to
 // mod code inside a try/catch, so a bug in the mod cannot take the game down.
 using System;
+using System.Text;
 using HarmonyLib;
 using Microsoft.Xna.Framework;
 using ProjectTower;
@@ -81,6 +82,20 @@ namespace SaltMap
         {
             try { MenuMap.AfterInvDraw(__instance); }
             catch (Exception e) { Log.ErrorOnce("MenuMap after draw", e); }
+        }
+    }
+
+    // Skips the game's own menu prompts while the map page is open (its controls are
+    // shown in their place). The overload the menu uses for its prompts; the check is a
+    // single flag test unless the map page is open.
+    [HarmonyPatch(typeof(Text), "DrawText", new[] { typeof(StringBuilder), typeof(Vector2), typeof(Color), typeof(float),
+        typeof(int), typeof(float), typeof(Player), typeof(int) })]
+    internal static class PromptHook
+    {
+        static bool Prefix(StringBuilder s)
+        {
+            try { return !MenuMap.HidesPrompt(s); }
+            catch (Exception e) { Log.ErrorOnce("MenuMap prompts", e); return true; }
         }
     }
 

@@ -5,53 +5,57 @@
 #   install.ps1 -GameDir "D:\...\Salt and Sanctuary"
 #   install.ps1 -SsMap "D:\SSMap"                 use an existing SSMap copy instead
 #   install.ps1 -NoMapDownload                    never download the map data
+# Paths use -LiteralPath: plain -Path reads [ ] in folder names as wildcards.
 param([string]$GameDir, [string]$SsMap, [switch]$NoMapDownload)
 
 $ErrorActionPreference = 'Stop'
+$here = $PSScriptRoot
 # Files from a downloaded zip carry Windows' "from the internet" mark, and .NET will
 # not load a marked mod DLL. Clear it on everything in this package.
-Get-ChildItem -Path $PSScriptRoot -Recurse -File | Unblock-File
+Get-ChildItem -LiteralPath $here -Recurse -File | Unblock-File
 
-. "$PSScriptRoot\Find-GameDir.ps1"
+. ([IO.Path]::Combine($here, 'Find-GameDir.ps1'))
 $game = Find-GameDir $GameDir
 if (-not $game) { throw "Salt and Sanctuary not found. Run: install.ps1 -GameDir `"D:\path\to\Salt and Sanctuary`"" }
 if (Get-Process salt -ErrorAction SilentlyContinue) { throw "Close Salt and Sanctuary first." }
 Write-Host "Game folder: $game"
 
-& "$PSScriptRoot\Patcher\SaltPatcher.exe" $game
+& ([IO.Path]::Combine($here, 'Patcher', 'SaltPatcher.exe')) $game
 if ($LASTEXITCODE) { throw "The patcher failed (exit code $LASTEXITCODE); see the message above." }
 
-$mods = Join-Path $game 'Mods'
-New-Item -ItemType Directory -Force -Path $mods | Out-Null
-Copy-Item -Path "$PSScriptRoot\Mods\*" -Destination $mods -Force
-Get-ChildItem -Path $mods -File -Filter *.dll | Unblock-File
+$mods = [IO.Path]::Combine($game, 'Mods')
+[void][IO.Directory]::CreateDirectory($mods)
+Get-ChildItem -LiteralPath ([IO.Path]::Combine($here, 'Mods')) -File | ForEach-Object {
+    Copy-Item -LiteralPath $_.FullName -Destination ([IO.Path]::Combine($mods, $_.Name)) -Force
+}
+Get-ChildItem -LiteralPath $mods -File -Filter *.dll | Unblock-File
 Write-Host "Mod installed to $mods"
 
 # The map pictures come from a local copy of the SSMap web map (see README).
-$ini = Join-Path $mods 'SaltMap.ini'
+$ini = [IO.Path]::Combine($mods, 'SaltMap.ini')
 if ($SsMap) {
     $lines = @()
-    if (Test-Path $ini) { $lines = @(Get-Content $ini | Where-Object { $_ -notmatch '^\s*ssmap\s*=' }) }
+    if (Test-Path -LiteralPath $ini) { $lines = @(Get-Content -LiteralPath $ini | Where-Object { $_ -notmatch '^\s*ssmap\s*=' }) }
     else { $lines = @('# SaltMap settings. Lines are key=value; # starts a comment.') }
     $lines += "ssmap=$SsMap"
-    Set-Content -Path $ini -Value $lines -Encoding ASCII
+    Set-Content -LiteralPath $ini -Value $lines -Encoding ASCII
     Write-Host "SSMap folder set to $SsMap"
 }
-$ssmapDir = Join-Path $mods 'SSMap'
-if (Test-Path $ini) {
-    $line = Get-Content $ini | Where-Object { $_ -match '^\s*ssmap\s*=' } | Select-Object -Last 1
+$ssmapDir = [IO.Path]::Combine($mods, 'SSMap')
+if (Test-Path -LiteralPath $ini) {
+    $line = Get-Content -LiteralPath $ini | Where-Object { $_ -match '^\s*ssmap\s*=' } | Select-Object -Last 1
     if ($line) {
         $v = ($line -split '=', 2)[1].Trim()
-        $ssmapDir = if ([IO.Path]::IsPathRooted($v)) { $v } else { Join-Path $mods $v }
+        $ssmapDir = if ([IO.Path]::IsPathRooted($v)) { $v } else { [IO.Path]::Combine($mods, $v) }
     }
 }
-if (Test-Path (Join-Path $ssmapDir 'tiles\0')) {
+if ([IO.Directory]::Exists([IO.Path]::Combine($ssmapDir, 'tiles', '0'))) {
     Write-Host "Map data found in $ssmapDir"
 } elseif ($NoMapDownload) {
     Write-Warning "No SSMap map data in $ssmapDir, and -NoMapDownload was given: the maps will be empty until it is there."
 } else {
-    . "$PSScriptRoot\Get-SsMap.ps1"
+    . ([IO.Path]::Combine($here, 'Get-SsMap.ps1'))
     try { Get-SsMap -Destination $ssmapDir }
-    catch { Write-Warning "Could not download the map data: $($_.Exception.Message) Run the installer again later, or put a copy of https://github.com/Kaszub09/SSMap in $ssmapDir." }
+    catch { Write-Warning "$($_.Exception.Message) Run the installer again, or put a copy of https://github.com/Kaszub09/SSMap in $ssmapDir." }
 }
 Write-Host "Done. Start the game; the log is $mods\SaltMap.log"

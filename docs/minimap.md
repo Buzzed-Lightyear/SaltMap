@@ -96,7 +96,10 @@ The bag, skull and gear are slots 26-28 of the equipment grid (`PlayerInvEquip`)
 slot 29 at grid point (3, -1), with its own icon (`Mod/Resources/mapicon.png`, drawn for this
 mod). Hooks: `PlayerInv.Update` prefix (keys), `PlayerInv.Draw` prefix/postfix (shows slot 28
 to the prompt logic), `DrawEquipCategory` prefix (map open) / postfix (slot), `GetEquipPoint`
-and `FindEquipNearestToPoint` postfixes (navigation), `Player.UpdateGamepad` postfix (Back).
+and `FindEquipNearestToPoint` postfixes (navigation), `Player.UpdateGamepad` postfix (Back),
+and a `Text.DrawText` prefix (the 8-argument overload the menu prompts use) that skips the
+game's own prompts (`InvPicker.strs` 79-82, 155, 160) while the map is open, so the bar
+under the menu shows the map's controls instead of a second "B Close".
 The map draws with the mod's own batch between `SpriteTools.End` and `BeginAlpha`, as
 `InterfaceRender` does around its glow passes.
 

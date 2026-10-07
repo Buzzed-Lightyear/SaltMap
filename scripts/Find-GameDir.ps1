@@ -15,18 +15,21 @@ function Find-GameDir([string]$Hint) {
     }
     if ($steam) {
         $libraries = @($steam)
-        $vdf = Join-Path $steam 'steamapps\libraryfolders.vdf'
-        if (Test-Path $vdf) {
-            foreach ($m in (Select-String -Path $vdf -Pattern '"path"\s+"([^"]+)"')) {
+        $vdf = [IO.Path]::Combine($steam, 'steamapps', 'libraryfolders.vdf')
+        if ([IO.File]::Exists($vdf)) {
+            foreach ($m in (Select-String -LiteralPath $vdf -Pattern '"path"\s+"([^"]+)"')) {
                 $libraries += ($m.Matches[0].Groups[1].Value -replace '\\\\', '\')
             }
         }
-        foreach ($lib in $libraries) { $candidates += (Join-Path $lib 'steamapps\common\Salt and Sanctuary') }
+        foreach ($lib in $libraries) { $candidates += [IO.Path]::Combine($lib, 'steamapps', 'common', 'Salt and Sanctuary') }
     }
     $candidates += 'C:\Program Files (x86)\Steam\steamapps\common\Salt and Sanctuary'
 
+    # .NET file checks, not Test-Path: Test-Path reads [ ] in a folder name as wildcards.
     foreach ($c in $candidates) {
-        if ($c -and (Test-Path (Join-Path $c 'salt.exe'))) { return (Resolve-Path $c).Path.TrimEnd('\') }
+        if ($c -and [IO.File]::Exists([IO.Path]::Combine($c, 'salt.exe'))) {
+            return [IO.Path]::GetFullPath($c).TrimEnd('\')
+        }
     }
     return $null
 }

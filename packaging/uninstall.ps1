@@ -3,18 +3,19 @@
 param([string]$GameDir)
 
 $ErrorActionPreference = 'Stop'
-Get-ChildItem -Path $PSScriptRoot -Recurse -File | Unblock-File
-. "$PSScriptRoot\Find-GameDir.ps1"
+$here = $PSScriptRoot
+Get-ChildItem -LiteralPath $here -Recurse -File | Unblock-File
+. ([IO.Path]::Combine($here, 'Find-GameDir.ps1'))
 $game = Find-GameDir $GameDir
 if (-not $game) { throw "Salt and Sanctuary not found. Run: uninstall.ps1 -GameDir `"D:\path\to\Salt and Sanctuary`"" }
 if (Get-Process salt -ErrorAction SilentlyContinue) { throw "Close Salt and Sanctuary first." }
 
-& "$PSScriptRoot\Patcher\SaltPatcher.exe" $game --restore
+& ([IO.Path]::Combine($here, 'Patcher', 'SaltPatcher.exe')) $game --restore
 if ($LASTEXITCODE) { Write-Warning "Could not restore salt.exe; use Steam's 'Verify integrity of game files' instead." }
 
-$mods = Join-Path $game 'Mods'
+$mods = [IO.Path]::Combine($game, 'Mods')
 foreach ($f in 'SaltMap.dll', 'SaltMap.pdb', '0Harmony.dll') {
-    $p = Join-Path $mods $f
-    if (Test-Path $p) { Remove-Item $p -Force }
+    $p = [IO.Path]::Combine($mods, $f)
+    if ([IO.File]::Exists($p)) { Remove-Item -LiteralPath $p -Force }
 }
 Write-Host "SaltMap removed. The Mods folder and its settings and log were kept."

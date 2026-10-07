@@ -286,6 +286,7 @@ namespace SaltMap
         {
             swapped = false;
             mouseOnGear = false;
+            hidePrompts = IsOpen && inv != null && inv.selCategory == 0;
             if (inv != null && inv.selCategory == 0 && inv.selItem == Slot)
             {
                 inv.selItem = GearSlot;
@@ -298,6 +299,24 @@ namespace SaltMap
             // If the mouse moved onto the gear meanwhile, the game's choice stands.
             if (swapped && inv != null && inv.selItem == GearSlot && !mouseOnGear) inv.selItem = Slot;
             swapped = false;
+            hidePrompts = false;
+        }
+
+        // The game's own prompts in the bar under the menu (InvPicker.strs: 79 and 160 left,
+        // 80, 81 and 155 middle, 82 "Close" right). While the map is open they would repeat
+        // or contradict the map's controls, which are drawn in that bar instead.
+        static readonly int[] PromptStrings = { 79, 80, 81, 82, 155, 160 };
+        static bool hidePrompts;
+
+        /// <summary>Prefix test for Text.DrawText: true to skip one of the game's menu prompts.</summary>
+        public static bool HidesPrompt(StringBuilder s)
+        {
+            if (!hidePrompts || s == null) return false;
+            StringBuilder[] strs = InvPicker.strs;
+            if (strs == null) return false;
+            foreach (int i in PromptStrings)
+                if (i < strs.Length && ReferenceEquals(strs[i], s)) return true;
+            return false;
         }
 
         /// <summary>Draws the map slot next to the gear. Postfix on DrawEquipCategory, map closed.</summary>
@@ -388,10 +407,12 @@ namespace SaltMap
                 SpriteTools.sprite.Draw(px, new Rectangle((int)centre.X - (int)(8 * scale), (int)centre.Y, (int)(16 * scale), Math.Max(1, (int)scale)), cross);
                 SpriteTools.sprite.Draw(px, new Rectangle((int)centre.X, (int)centre.Y - (int)(8 * scale), Math.Max(1, (int)scale), (int)(16 * scale)), cross);
             }
+            // The map's controls go in the prompt bar under the menu, in place of the game's
+            // prompts (hidden while the map is open), at the game's prompt size and place.
             // This overload squeezes text into maxLen and scales size by 0.8.
             bool keyboard = GameApi.UsingKeyboard(p);
-            Text.DrawText(keyboard ? KeyboardHint : PadHint, new Vector2(area.X + 8f * scale, area.Bottom - 14f * scale),
-                new Color(1f, 1f, 1f, 0.6f * alpha), 0.4f * scale, 0, area.Width - 16f * scale, p, keyboard ? 0 : 1);
+            Text.DrawText(keyboard ? KeyboardHint : PadHint, new Vector2(dRect.X + 20f * scale, dRect.Bottom + 30f * scale),
+                new Color(1f, 1f, 1f, alpha), 0.45f * scale, 0, dRect.Width - 40f * scale, p, keyboard ? 0 : 1);
 
             Vector2 pointer = centre;
             if (MouseMgr.isActive && area.Contains(new Point((int)MouseMgr.mLoc.X, (int)MouseMgr.mLoc.Y))) pointer = MouseMgr.mLoc;

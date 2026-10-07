@@ -136,6 +136,7 @@ namespace ProjectTower.player
     {
         public float alpha;
         public bool active;
+        public static StringBuilder[] strs;
     }
 
     public class PlayerInvEquip
