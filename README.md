@@ -4,8 +4,10 @@ A minimap and a full map page for **Salt and Sanctuary** (Steam, Windows).
 
 - **Minimap** in the top-right corner, tucked into the HUD's corner ornament, following
   your character, with zoom levels.
+  - ![minimap](docs/mini-map.png)
 - **Map page** in the Escape menu (a new map icon after the bag, skull and gear): pan,
   zoom, centre on yourself, and see the name of any icon.
+  - ![map](docs/menu-map.png)
 - **Icons** for items, NPCs, bosses and sanctuaries. Item and boss icons **disappear once
   you have collected the item or beaten the boss**, read from your save's own progress.
   Sanctuaries and NPCs always stay.
