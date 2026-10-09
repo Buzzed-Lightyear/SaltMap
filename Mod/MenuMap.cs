@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -31,14 +32,26 @@ namespace SaltMap
         static readonly float[] Zooms = { 0.004f, 0.006f, 0.009f, 0.013f, 0.019f, 0.027f, 0.038f, 0.054f, 0.076f, 0.11f };
         const int DefaultZoom = 4;
         const float PanScreensPerSecond = 0.8f;
+        // The three farthest zoom levels show only the ringed objectives; enemies show
+        // within this many world units of the player.
+        const float FarZoomLevels = 3f;
+        const float EnemyRange = 4000f;
+
+        // What the map page shows, stepped with the D-pad (left/right) or F; saved as mapFilter.
+        static readonly Show[] Filters = { Show.All, Show.Items, Show.Bosses, Show.Npcs, Show.Sanctuaries, Show.Enemies, Show.None };
+        static readonly string[] FilterNames = { "All", "Items", "Bosses", "NPCs", "Sanctuaries", "Enemies", "Map only" };
+        static int filter = -1;
 
         static readonly StringBuilder Title = new StringBuilder("Map");
-        static readonly StringBuilder KeyboardHint = new StringBuilder("Move: arrows/WASD/drag    Zoom: Q E/wheel    Centre: Space    Back: Esc");
+        static readonly StringBuilder KeyboardHint = new StringBuilder(
+            "Move: arrows/WASD/drag    Zoom: Q E/wheel    Show: F    Guide: G    Centre: Space    Back: Esc");
         // The game's own glyph characters (Text.CHAR_*); drawn with replaceIcons 1, so
         // A and B show whichever buttons accept and cancel are set to.
         static readonly StringBuilder PadHint = new StringBuilder()
             .Append(Text.CHAR_L_ANALOG_UP).Append(" Move    ")
             .Append(Text.CHAR_R_ANALOG_UP).Append(" Zoom    ")
+            .Append(Text.CHAR_DPAD_LEFT_RIGHT).Append(" Show    ")
+            .Append(Text.CHAR_Y).Append(" Guide    ")
             .Append(Text.CHAR_A).Append(" Centre    ").Append(Text.CHAR_B).Append(" Back    ").Append(Text.CHAR_BACK).Append(" Close");
         static readonly StringBuilder Label = new StringBuilder();
 
@@ -52,6 +65,7 @@ namespace SaltMap
         const float StickDeadZone = 0.2f;
         static KeyboardState lastKeys;
         static MouseState lastMouse;
+        static GamePadState lastPad;
         static bool dragging;
         static bool swapped;          // selItem shown to PlayerInv.Draw as the gear slot
         static bool mouseOnGear;
@@ -153,9 +167,32 @@ namespace SaltMap
             dragging = false;
             lastKeys = Keyboard.GetState();
             lastMouse = Mouse.GetState();
+            lastPad = GameApi.Pad(PlayerTracker.MainPlayer);
+            Filter();   // read the saved filter on first use
             GameApi.PlayAccept();
+            try { Progress.WriteSnapshot(); }
+            catch (Exception e) { Log.ErrorOnce("Progress snapshot", e); }
             Log.Info("menu map opened at map pixel (" + focus.X.ToString("F0", CultureInfo.InvariantCulture) + ", "
-                + focus.Y.ToString("F0", CultureInfo.InvariantCulture) + "), zoom " + zoom);
+                + focus.Y.ToString("F0", CultureInfo.InvariantCulture) + "), zoom " + zoom + ", showing " + FilterNames[filter]);
+        }
+
+        /// <summary>The current filter, read from SaltMap.ini the first time.</summary>
+        static Show Filter()
+        {
+            if (filter < 0) SetFilter(Settings.GetInt("mapFilter", 0), false);
+            return Filters[filter];
+        }
+
+        static void SetFilter(int f, bool save)
+        {
+            filter = ((f % Filters.Length) + Filters.Length) % Filters.Length;
+            Title.Clear().Append("Map");
+            if (filter != 0) Title.Append(": ").Append(FilterNames[filter]);
+            if (save)
+            {
+                Settings.Set("mapFilter", filter.ToString(CultureInfo.InvariantCulture));
+                Log.Info("menu map showing " + FilterNames[filter]);
+            }
         }
 
         static void Close(bool sound)
@@ -175,7 +212,22 @@ namespace SaltMap
             MouseState mouseBefore = lastMouse;
             lastMouse = mouse;
             GamePadState pad = GameApi.Pad(p);
+            GamePadState padBefore = lastPad;
+            lastPad = pad;
             float dt = Math.Max(0f, Math.Min(0.1f, Game1.frameTime));
+
+            // What to show: D-pad left/right, or F (Shift+F back).
+            int turn = 0;
+            if (pad.DPad.Right == ButtonState.Pressed && padBefore.DPad.Right != ButtonState.Pressed) turn++;
+            if (pad.DPad.Left == ButtonState.Pressed && padBefore.DPad.Left != ButtonState.Pressed) turn--;
+            if (Pressed(keys, before, Keys.F))
+                turn += keys.IsKeyDown(Keys.LeftShift) || keys.IsKeyDown(Keys.RightShift) ? -1 : 1;
+            if (turn != 0)
+            {
+                Filter();
+                SetFilter(filter + turn, true);
+                GameApi.PlaySelect();
+            }
 
             // Zoom: the right stick glides (up is closer); bumpers, triggers, keys and the
             // wheel step one level. The game pages with bumpers and flips the stats panel
@@ -195,18 +247,26 @@ namespace SaltMap
             if (Math.Abs(zoomStick) > StickDeadZone)
                 zoom = MathHelper.Clamp(zoom + zoomStick * ZoomLevelsPerSecond * dt, 0f, Zooms.Length - 1);
 
+            // The "where next" guide: Y, or G, cycles main and optional, main only, off.
+            if (p.keyYToggle || Pressed(keys, before, Keys.G))
+            {
+                Guide.Cycle();
+                GameApi.PlaySelect();
+            }
+
             if (p.keyAccept && PlayerTracker.HasPosition)
             {
                 focus = MapSpace.FromWorld(PlayerTracker.Position);
                 GameApi.PlaySelect();
             }
 
-            // Held keys and the stick pan smoothly; the speed is a share of the view per second.
+            // Held keys and the left stick pan smoothly; the speed is a share of the view per
+            // second. (The D-pad picks what to show instead.)
             Vector2 dir = Vector2.Zero;
-            if (keys.IsKeyDown(Keys.Left) || keys.IsKeyDown(Keys.A) || pad.DPad.Left == ButtonState.Pressed) dir.X -= 1;
-            if (keys.IsKeyDown(Keys.Right) || keys.IsKeyDown(Keys.D) || pad.DPad.Right == ButtonState.Pressed) dir.X += 1;
-            if (keys.IsKeyDown(Keys.Up) || keys.IsKeyDown(Keys.W) || pad.DPad.Up == ButtonState.Pressed) dir.Y -= 1;
-            if (keys.IsKeyDown(Keys.Down) || keys.IsKeyDown(Keys.S) || pad.DPad.Down == ButtonState.Pressed) dir.Y += 1;
+            if (keys.IsKeyDown(Keys.Left) || keys.IsKeyDown(Keys.A)) dir.X -= 1;
+            if (keys.IsKeyDown(Keys.Right) || keys.IsKeyDown(Keys.D)) dir.X += 1;
+            if (keys.IsKeyDown(Keys.Up) || keys.IsKeyDown(Keys.W)) dir.Y -= 1;
+            if (keys.IsKeyDown(Keys.Down) || keys.IsKeyDown(Keys.S)) dir.Y += 1;
             // The left stick pans; stick Y is up-positive, screen Y is down-positive.
             Vector2 stick = pad.ThumbSticks.Left;
             if (stick.Length() > StickDeadZone) dir += new Vector2(stick.X, -stick.Y);
@@ -393,11 +453,22 @@ namespace SaltMap
             float mapPerScreen = ZoomAt(zoom) * scale / MapSpace.PixelsPerUnit;
             mapRect = area;
             mapScale = mapPerScreen;
-            Overlay.DrawOutsideGameBatch(device => MapView.Draw(device, Overlay.Batch, Overlay.Pixel, area, focus, mapPerScreen,
-                22f * scale, 7f * scale, PlayerTracker.HasPosition ? (Vector2?)MapSpace.FromWorld(PlayerTracker.Position) : null,
-                5f * scale));
+            Show show = Filter();
+            ViewStyle style = new ViewStyle
+            {
+                IconSize = 27f * scale,
+                PlayerSize = 8f * scale,
+                DotSize = 10f * scale,
+                Show = show,
+                Guide = Guide.Enabled,
+                EdgePointer = true,
+                OnlyRinged = zoom < FarZoomLevels,      // the farthest levels: only the ringed objectives
+                EnemyRange = EnemyRange,
+            };
+            Overlay.DrawOutsideGameBatch(device => MapView.Draw(device, Overlay.Batch, Overlay.Pixel, area, focus, mapPerScreen, style));
 
-            // Back in the game's batch: a frame, a crosshair, the hint and the nearest marker's name.
+            // Back in the game's batch: a frame, a crosshair, area names, completion, the
+            // hint and the name of whatever is under the crosshair or the mouse.
             InterfaceRender.DrawRect(area, 0.3f * alpha, 1);
             Vector2 centre = new Vector2(area.X + area.Width / 2f, area.Y + area.Height / 2f);
             Texture2D px = Game1.nullTex;
@@ -407,6 +478,9 @@ namespace SaltMap
                 SpriteTools.sprite.Draw(px, new Rectangle((int)centre.X - (int)(8 * scale), (int)centre.Y, (int)(16 * scale), Math.Max(1, (int)scale)), cross);
                 SpriteTools.sprite.Draw(px, new Rectangle((int)centre.X, (int)centre.Y - (int)(8 * scale), Math.Max(1, (int)scale), (int)(16 * scale)), cross);
             }
+            DrawAreaNames(area, mapPerScreen, scale, alpha);
+            DrawCompletion(dRect, scale, alpha);
+
             // The map's controls go in the prompt bar under the menu, in place of the game's
             // prompts (hidden while the map is open), at the game's prompt size and place.
             // This overload squeezes text into maxLen and scales size by 0.8.
@@ -416,16 +490,31 @@ namespace SaltMap
 
             Vector2 pointer = centre;
             if (MouseMgr.isActive && area.Contains(new Point((int)MouseMgr.mLoc.X, (int)MouseMgr.mLoc.Y))) pointer = MouseMgr.mLoc;
-            Marker near = MapView.Nearest(area, focus, mapPerScreen, pointer, 26f * scale);
-            if (near != null && near.Name.Length > 0)
+            Marker near = MapView.Nearest(area, focus, mapPerScreen, pointer, 26f * scale, style);
+            Enemies.Dot foe;
+            string objective = MapView.NearestObjective(area, focus, mapPerScreen, pointer, 30f * scale);
+            if (objective != null)
             {
-                Vector2 at = MapView.ToScreen(area, focus, mapPerScreen, near.Map);
-                Label.Clear().Append(near.Name);
-                if (near.Group.Length > 0 && near.Group != near.Name) Label.Append("  (").Append(near.Group).Append(')');
-                Vector2 textAt = new Vector2(MathHelper.Clamp(at.X, area.X + 150f * scale, area.Right - 150f * scale),
-                    Math.Max(area.Y + 16f * scale, at.Y - 22f * scale));
-                InterfaceRender.DrawRect(new Rectangle((int)(textAt.X - 150f * scale), (int)(textAt.Y - 13f * scale), (int)(300f * scale), (int)(26f * scale)), 0.8f * alpha, 4);
-                Text.DrawText(Label, textAt, new Color(1f, 1f, 1f, alpha), 0.5f * scale, 1, 290f * scale);
+                Label.Clear().Append(objective);
+                DrawLabel(area, pointer, scale, alpha);
+            }
+            else if (near != null && Progress.NameOf(near).Length > 0)
+            {
+                string name = Progress.NameOf(near);
+                Label.Clear().Append(name);
+                if (near.Group.Length > 0 && near.Group != name && near.Kind != Show.Sanctuaries) Label.Append("  (").Append(near.Group).Append(')');
+                DrawLabel(area, MapView.ToScreen(area, focus, mapPerScreen, near.Map), scale, alpha);
+            }
+            else if (MapView.NearestEnemy(area, focus, mapPerScreen, pointer, 16f * scale, style, out foe))
+            {
+                // An enemy: its name in the game's language, and its health while it is spawned.
+                string name = Enemies.NameOf(foe.MonsterIdx) ?? "Enemy";
+                Label.Clear().Append(name);
+                if (foe.Live && foe.MaxHp > 0f)
+                    Label.Append("  ").Append(((int)Math.Ceiling(foe.Hp)).ToString(CultureInfo.InvariantCulture))
+                         .Append(" / ").Append(((int)Math.Ceiling(foe.MaxHp)).ToString(CultureInfo.InvariantCulture));
+                if (foe.Live && foe.Aggro) Label.Append("  (alert)");
+                DrawLabel(area, MapView.ToScreen(area, focus, mapPerScreen, foe.Map), scale, alpha);
             }
 
             if (!reportedOpen)
@@ -434,6 +523,82 @@ namespace SaltMap
                 Log.Info("menu map drew: area (" + area.X + ", " + area.Y + ") " + area.Width + "x" + area.Height
                     + ", zoom " + zoom + " (" + mapPerScreen.ToString("F3", CultureInfo.InvariantCulture) + " screen px per map px)");
             }
+        }
+
+        /// <summary>A name box above a point on the map, kept inside the map area.</summary>
+        static void DrawLabel(Rectangle area, Vector2 at, float scale, float alpha)
+        {
+            Vector2 textAt = new Vector2(MathHelper.Clamp(at.X, area.X + 150f * scale, area.Right - 150f * scale),
+                Math.Max(area.Y + 16f * scale, at.Y - 22f * scale));
+            InterfaceRender.DrawRect(new Rectangle((int)(textAt.X - 150f * scale), (int)(textAt.Y - 13f * scale), (int)(300f * scale), (int)(26f * scale)), 0.8f * alpha, 4);
+            Text.DrawText(Label, textAt, new Color(1f, 1f, 1f, alpha), 0.5f * scale, 1, 290f * scale);
+        }
+
+        static readonly StringBuilder AreaName = new StringBuilder();
+
+        /// <summary>SSMap's region names, at their places, with a shadow so they read on any tile.</summary>
+        static void DrawAreaNames(Rectangle area, float mapPerScreen, float scale, float alpha)
+        {
+            foreach (Marker r in Markers.Regions)
+            {
+                Vector2 at = MapView.ToScreen(area, focus, mapPerScreen, r.Map);
+                if (!area.Contains(new Point((int)at.X, (int)at.Y)) || r.Name.Length == 0) continue;
+                AreaName.Clear().Append(r.Name);
+                float size = 0.42f * scale;
+                Text.DrawText(AreaName, at + new Vector2(1.5f, 1.5f) * scale, new Color(0f, 0f, 0f, 0.8f * alpha), size, 1);
+                Text.DrawText(AreaName, at, new Color(1f, 0.93f, 0.75f, 0.95f * alpha), size, 1);
+            }
+        }
+
+        static readonly StringBuilder Stats = new StringBuilder();
+        static readonly StringBuilder NextLine = new StringBuilder();
+
+        static readonly StringBuilder[] OptionalLines = { new StringBuilder(), new StringBuilder() };
+
+        /// <summary>
+        /// Completion counts, the next objective and the open optional ones, in a panel of
+        /// the game's style under the menu's prompt bar, outside the map.
+        /// </summary>
+        static void DrawCompletion(Rectangle dRect, float scale, float alpha)
+        {
+            int items, itemsTotal, bosses, bossesTotal, claimed, sanctuaries;
+            Progress.Count(Show.Items, out items, out itemsTotal);
+            Progress.Count(Show.Bosses, out bosses, out bossesTotal);
+            Places.CountSanctuaries(out claimed, out sanctuaries);
+            Stats.Clear().Append("Items ").Append(items).Append('/').Append(itemsTotal)
+                 .Append("     Bosses ").Append(bosses).Append('/').Append(bossesTotal)
+                 .Append("     Sanctuaries claimed ").Append(claimed).Append('/').Append(sanctuaries);
+
+            string next;
+            Vector2 where;
+            NextLine.Clear();
+            if (Guide.Next(out next, out where)) NextLine.Append("Next: ").Append(next);
+            else if (!Guide.Enabled) NextLine.Append("Guide off");
+            else NextLine.Append("Main route done");
+
+            // One optional objective per line, two at most, so none is squeezed.
+            OptionalLines[0].Clear();
+            OptionalLines[1].Clear();
+            int open = 0;
+            foreach (KeyValuePair<string, Vector2> o in Guide.OptionalOpen())
+            {
+                if (open < OptionalLines.Length) OptionalLines[open].Append("Optional: ").Append(o.Key);
+                open++;
+            }
+            if (open > OptionalLines.Length) OptionalLines[OptionalLines.Length - 1].Append("   (+").Append(open - OptionalLines.Length).Append(" more)");
+            int optionalLines = Math.Min(open, OptionalLines.Length);
+
+            float line = 30f * scale;
+            int lines = 2 + optionalLines;
+            // The prompt bar is 50 tall, 5 below the menu; the panel goes 8 below that.
+            Rectangle box = new Rectangle(dRect.X, dRect.Bottom + (int)(63f * scale), dRect.Width, (int)(line * lines + 14f * scale));
+            InterfaceRender.DrawRect(box, 0.8f * alpha, 4);
+            Vector2 at = new Vector2(box.X + 20f * scale, box.Y + 7f * scale + line / 2f);
+            float width = box.Width - 40f * scale;
+            Text.DrawText(Stats, at, new Color(1f, 1f, 1f, alpha), 0.5f * scale, 0, width);
+            Text.DrawText(NextLine, at + new Vector2(0f, line), new Color(1f, 0.85f, 0.35f, alpha), 0.5f * scale, 0, width);
+            for (int i = 0; i < optionalLines; i++)
+                Text.DrawText(OptionalLines[i], at + new Vector2(0f, (2 + i) * line), new Color(0.6f, 0.86f, 1f, alpha), 0.5f * scale, 0, width);
         }
 
         // Slot geometry, as PlayerInvEquip.DrawEquipCategory computes it for row -1.

@@ -9,6 +9,19 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace SaltMap
 {
+    /// <summary>What a map view shows; the map page's filter picks one combination.</summary>
+    [Flags]
+    internal enum Show
+    {
+        None = 0,
+        Items = 1,          // Items, and Spells & Prayers
+        Bosses = 2,
+        Npcs = 4,
+        Sanctuaries = 8,
+        Enemies = 16,       // the red dots
+        All = Items | Bosses | Npcs | Sanctuaries | Enemies,
+    }
+
     internal sealed class Marker
     {
         public string Category;     // Items, NPC, Enemies, Sanctuaries, Spells & Prayers
@@ -16,6 +29,21 @@ namespace SaltMap
         public string Name;         // SSMap's tooltip, cleaned for the game's font
         public string Icon;         // file in images\markerIcons
         public Vector2 Map;         // map pixels (MapSpace)
+
+        /// <summary>Which filter group the marker belongs to.</summary>
+        public Show Kind
+        {
+            get
+            {
+                switch (Category)
+                {
+                    case "NPC": return Show.Npcs;
+                    case "Enemies": return Show.Bosses;
+                    case "Sanctuaries": return Show.Sanctuaries;
+                    default: return Show.Items;
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -40,6 +68,39 @@ namespace SaltMap
         public static readonly List<Marker> All = new List<Marker>();
         public static readonly List<Marker> Regions = new List<Marker>();
 
+        static readonly Dictionary<string, Marker> byName = new Dictionary<string, Marker>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// The first marker whose name, before any " - " (SSMap's "Pitchfork - Spear 0"),
+        /// is this name, or null.
+        /// </summary>
+        public static Marker Find(string name)
+        {
+            Marker m;
+            if (byName.TryGetValue(name, out m)) return m;
+            foreach (Marker x in All)
+            {
+                int dash = x.Name.IndexOf(" - ", StringComparison.Ordinal);
+                string b = dash > 0 ? x.Name.Substring(0, dash) : x.Name;
+                if (string.Equals(b, name, StringComparison.OrdinalIgnoreCase)) { m = x; break; }
+            }
+            byName[name] = m;
+            return m;
+        }
+
+        /// <summary>The SSMap region label nearest a map point (within about two screens), or null.</summary>
+        public static string RegionNear(Vector2 map)
+        {
+            Marker best = null;
+            float bestDist = 3000f * 3000f;
+            foreach (Marker r in Regions)
+            {
+                float d = Vector2.DistanceSquared(r.Map, map);
+                if (d < bestDist) { bestDist = d; best = r; }
+            }
+            return best != null && best.Name.Length > 0 ? best.Name : null;
+        }
+
         static string iconFolder;
         static readonly Dictionary<string, Texture2D> icons = new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
 
@@ -50,8 +111,12 @@ namespace SaltMap
             if (!File.Exists(file)) { Log.Info("markers: " + file + " not found"); return; }
 
             string js = File.ReadAllText(file, Encoding.UTF8);
+            int offMap = 0;
             foreach (JsonMarker m in Parse(js, "getAllMarkersData"))
             {
+                // SSMap puts the prologue's boat (the Unspeakable Deep, the Ship Captain, a
+                // Black Pearl) beyond the left edge of its map: those are left out.
+                if (MapSpace.FromLatLng(m.lat, m.lng).X < 0f) { offMap++; continue; }
                 All.Add(new Marker
                 {
                     Category = m.category ?? "",
@@ -73,7 +138,8 @@ namespace SaltMap
             }
             StringBuilder sb = new StringBuilder();
             foreach (KeyValuePair<string, int> kv in counts) sb.Append(", ").Append(kv.Key).Append(' ').Append(kv.Value);
-            Log.Info("markers: " + All.Count + " from " + file + sb + "; regions " + Regions.Count);
+            Log.Info("markers: " + All.Count + " from " + file + sb + "; regions " + Regions.Count
+                + (offMap > 0 ? "; " + offMap + " off the map left out" : ""));
         }
 
         /// <summary>

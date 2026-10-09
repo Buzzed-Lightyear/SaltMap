@@ -27,9 +27,13 @@ namespace SaltMap
         const float TrimInset = 60f;
         const float GapInsideTrim = 9f;      // clears the trim's two main strokes
         const float Size = 200f;
-        const float IconSize = 15f;
-        const float PlayerSize = 6f;
-        const float DotSize = 5f;
+        const float IconSize = 19f;
+        const float PlayerSize = 7f;
+        const float DotSize = 9f;
+        // The three farthest zoom levels show only the ringed objectives; enemies show
+        // within this many world units of the player.
+        const int FarZoomLevels = 3;
+        const float EnemyRange = 4000f;
         static readonly Rectangle TrimSource = new Rectangle(128, 128, 448, 384);
 
         static readonly Color Edge = new Color(0, 0, 0, 200);
@@ -137,7 +141,17 @@ namespace SaltMap
             batch.Draw(pixel, edge, Edge);
             batch.End();
 
-            MapView.Draw(device, batch, pixel, frame, focus, scale, IconSize * s, PlayerSize * s, focus, DotSize * s);
+            MapView.Draw(device, batch, pixel, frame, focus, scale, new ViewStyle
+            {
+                IconSize = IconSize * s,
+                PlayerSize = PlayerSize * s,
+                DotSize = DotSize * s,
+                OnlyRinged = zoom < FarZoomLevels,
+                EnemyRange = EnemyRange,
+                Show = Show.All,
+                Guide = Guide.Enabled,
+                EdgePointer = true,     // the next objective, when it is off the minimap
+            });
 
             // The game drew its corner trim under the map; draw the part over the map
             // again so the map sits inside the frame. Same placement as the game uses.

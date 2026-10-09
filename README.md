@@ -9,9 +9,20 @@ A minimap and a full map page for **Salt and Sanctuary** (Steam, Windows).
   zoom, centre on yourself, and see the name of any icon.
   - ![map](docs/menu-map.png)
 - **Icons** for items, NPCs, bosses and sanctuaries. Item and boss icons **disappear once
-  you have collected the item or beaten the boss**, read from your save's own progress.
-  Sanctuaries and NPCs always stay.
-- **Enemies** as red dots: nearby ones bright, far-away ones dimmer, bosses larger.
+  you have collected the item or beaten the boss**, and brands once you own them, read from
+  your save's own progress. NPCs show only where they currently are. Sanctuaries are named
+  after their area and the creed that holds them in your save.
+- **Filters** on the map page: all icons, items, bosses, NPCs, sanctuaries, enemies, or
+  just the map.
+- **Enemies** near you as red dots, bosses ringed. Hover one on the map page for its name
+  and health.
+- **Your marker** is a magenta diamond; a co-op partner shows in blue.
+- **Zoomed far out**, only the objectives' icons stay, so the whole map reads clearly.
+- **Where next:** the next objective on the main route (after the Fextralife wiki's Game
+  Progress Route) gets a gold ring on the map, and an arrow at the minimap's edge when it is
+  out of view. Optional bosses, NPC stories, notable items and hidden sanctuaries get silver
+  rings once they open up. Can be set to main route only, or off.
+- **Map page extras:** area names, and completion counts for items, bosses and sanctuaries.
 - Keyboard, mouse and **controller**, using buttons the game leaves free.
 
 The map pictures and icon positions come from the community **SSMap** web map; the
@@ -59,8 +70,10 @@ set `ssmap=` in `Mods\SaltMap.ini` or pass `-SsMap`. Keep it for personal use.
 | Show / hide the minimap | M | D-pad Up (steps near, middle, far, hidden) |
 | Zoom the minimap | `=` and `-` | D-pad Up |
 | Open the map page | Esc, then the map icon | Back / Select (in play or in the Esc menu) |
-| Pan | Arrows / WASD / drag | Left stick, D-pad |
+| Pan | Arrows / WASD / drag | Left stick |
 | Zoom | Q E, mouse wheel | Right stick (smooth); LB RB, LT RT |
+| Change what is shown | F (Shift+F back) | D-pad left / right |
+| Guide: all, main only, off | G | Y |
 | Centre on yourself | Space | A |
 | Back to the menu | Esc | B |
 | Close the menu | | Back / Select |
@@ -74,6 +87,8 @@ set `ssmap=` in `Mods\SaltMap.ini` or pass `-SsMap`. Keep it for personal use.
 | `ssmap` | Folder of the SSMap copy; relative paths count from `Mods`. Default `SSMap`. |
 | `minimap` | `on` or `off` (also toggled in game). |
 | `minimapZoom` | 0 (far) to 7 (near) (also changed in game). |
+| `mapFilter` | What the map page shows, 0 (all) to 6 (map only) (also changed in game). |
+| `guide` | `all`, `main` or `off` (also changed in game). |
 
 ## How it works
 
@@ -112,6 +127,7 @@ Releases: push a tag `v<version>` matching `<Version>` in `Mod/SaltMap.csproj`; 
 
 - [SSMap](https://github.com/Kaszub09/SSMap) by Kaszub09 and contributors: map tiles,
   markers and icons.
+- The progression route: the [Fextralife Salt and Sanctuary wiki](https://saltandsanctuary.wiki.fextralife.com/Game_Progress_Route).
 - The original screenshot map of the world by
   [u/magicofgames](https://www.reddit.com/r/saltandsanctuary/comments/f0t1sa/ultimate_map_still_wip_well_no_but_actually_yes/).
 - [Harmony](https://github.com/pardeike/Harmony) (MIT) and

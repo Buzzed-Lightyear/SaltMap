@@ -29,6 +29,7 @@ namespace ProjectTower.gamestate
     {
         public static int gameState;
         public static int mainPlayerIdx;
+        public static int coopPlayerIdx;
     }
 }
 
@@ -61,6 +62,9 @@ namespace ProjectTower.character
 
     public class Character
     {
+        public int face;
+        public bool aggrod;
+        public CharStats stats;
         public bool exists;
         public Vector2 loc;
         public float dyingFrame;
@@ -70,6 +74,14 @@ namespace ProjectTower.character
         public bool npcFightMode;
         public int playerIdx;
         public bool boss;
+    }
+}
+
+namespace ProjectTower.character
+{
+    public class CharStats
+    {
+        public float GetMaxHP() => throw null;
     }
 }
 
@@ -107,11 +119,18 @@ namespace ProjectTower.player
         public bool keyStatsLeft;
         public int gamepadIdx;
         public List<string> flags;
+        public bool[] runes;
+        public int[] sanctuaryVisitCount;
         public void UpdateGamepad() => throw null;
     }
 
     public class PlayerDraw
     {
+    }
+
+    public class PlayerStats
+    {
+        public static StringBuilder[] strs;
     }
 
     public class PlayerDialog
@@ -182,6 +201,8 @@ namespace ProjectTower.hud
         public const char CHAR_BACK = '\u0242';
         public const char CHAR_R_ANALOG_UP = '\u0247';
         public const char CHAR_L_ANALOG_UP = '\u02e5';
+        public const char CHAR_DPAD_LEFT_RIGHT = '\u0236';
+        public const char CHAR_Y = '\u023f';
 
         public static void DrawText(StringBuilder s, Vector2 loc, Color color, float size, int align) => throw null;
         public static void DrawText(StringBuilder s, Vector2 loc, Color color, float size, int align, float maxLen) => throw null;
@@ -195,8 +216,14 @@ namespace ProjectTower.map
     using MapEdit.map;
     using ProjectTower.map.pickups;
 
+    public class AreaCatalog
+    {
+        public static StringBuilder[] areaStr;
+    }
+
     public class MapMgr
     {
+        public static ProjectTower.sanctuary.SanctuaryMgr sanctuaryMgr;
         public static PickupMgr pickupMgr;
         public static ReserveEntities reserveEntities;
         public static Map map;
@@ -214,6 +241,40 @@ namespace ProjectTower.map
             public bool exists;
             public bool boss;
         }
+    }
+}
+
+namespace ProjectTower.sanctuary
+{
+    public class SanctuaryMgr
+    {
+        public Sanctuary[] sanctuaries;
+    }
+
+    public class Sanctuary
+    {
+        public int creed;
+        public Vector2 loc;
+    }
+}
+
+namespace DialogEdit.dialog
+{
+    public class DialogMgr
+    {
+        public static NPCDialog[] dialogList;
+    }
+
+    public class NPCDialog
+    {
+        public string name;
+        public DialogNode[] nodeList;
+    }
+
+    public class DialogNode
+    {
+        public string postSetFlagStr;
+        public string[] giveScript;
     }
 }
 
@@ -261,6 +322,7 @@ namespace MonsterEdit.monsters
 
     public class MonsterDef
     {
+        public float hp;
         public string[] title;
         public int type;
         public int flags;
@@ -273,6 +335,8 @@ namespace LootEdit
     {
         public string name;
         public string[] title;
+        public int type;
+        public int flags;
     }
 }
 

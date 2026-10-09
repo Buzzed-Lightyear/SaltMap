@@ -1,6 +1,7 @@
 # Builds SaltMap-<version>.zip on GitHub's Windows runners. The game is not needed: the
 # mod compiles against the reference stub in Reference/salt and MonoGame's NuGet package.
-#   Push a tag such as v0.2.0  -> a GitHub release with the zip attached.
+#   Push a tag such as v0.2.0  -> a GitHub release with the zip attached, its notes taken
+#   from that version's section of CHANGELOG.md ("## 0.2.0").
 #   Run it by hand (Actions tab -> Release -> Run workflow) -> the zip as a build artifact.
 name: Release
 
@@ -32,9 +33,22 @@ jobs:
           name: SaltMap
           path: dist/*.zip
 
+      - name: Release notes from CHANGELOG.md
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          $version = '${{ github.ref_name }}'.TrimStart('v')
+          $lines = @(Get-Content CHANGELOG.md)
+          $start = [array]::IndexOf($lines, "## $version")
+          if ($start -lt 0) { throw "CHANGELOG.md has no '## $version' section" }
+          $end = $start + 1
+          while ($end -lt $lines.Count -and -not $lines[$end].StartsWith('## ')) { $end++ }
+          $lines[($start + 1)..($end - 1)] | Set-Content dist/release-notes.md -Encoding utf8
+
       - name: Attach the zip to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.zip
-          generate_release_notes: true
+          body_path: dist/release-notes.md
+          generate_release_notes: true   # adds the "Full Changelog" compare link
