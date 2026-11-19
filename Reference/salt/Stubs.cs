@@ -13,6 +13,7 @@ namespace ProjectTower
         public static Game1 game;
         public static float frameTime;
         public static Texture2D nullTex;
+        public static void SetResolution(int width, int height, int fullScreen, bool vsync, int framerate) => throw null;
     }
 
     public class SpriteTools

@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -30,6 +31,10 @@ namespace SaltMap
             Try("InputMgr.IsMouseKeyboardActive", () => AccessTools.MethodDelegate<Func<Player, bool>>(
                 AccessTools.Method(AccessTools.TypeByName("ProjectTower.config.InputMgr"), "IsMouseKeyboardActive", new[] { typeof(Player) })));
 
+        static readonly FieldInfo windowForm =
+            Try("WinFormsGameWindow.Form", () => AccessTools.Field(
+                AccessTools.TypeByName("MonoGame.Framework.WinFormsGameWindow"), "Form"));
+
         static readonly Action playSelect = SoundAction("PlaySelect");
         static readonly Action playAccept = SoundAction("PlayAccept");
         static readonly Action playCancel = SoundAction("PlayCancel");
@@ -53,6 +58,17 @@ namespace SaltMap
         {
             return Try("Sound." + name, () => AccessTools.MethodDelegate<Action>(
                 AccessTools.Method(AccessTools.TypeByName("ProjectTower.audio.Sound"), name, Type.EmptyTypes)));
+        }
+
+        /// <summary>
+        /// Whether MonoGame's game window (a WinFormsGameWindow) is being destroyed or gone.
+        /// False when that cannot be read.
+        /// </summary>
+        public static bool IsWindowClosing(object window)
+        {
+            if (window == null || windowForm == null) return false;
+            System.Windows.Forms.Control form = windowForm.GetValue(window) as System.Windows.Forms.Control;
+            return form == null || form.Disposing || form.IsDisposed;
         }
 
         /// <summary>The HUD's scale (PlayerDraw.scale): 2 on screens wider than 2560, times the HUD size option.</summary>

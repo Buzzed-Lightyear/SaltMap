@@ -1,6 +1,7 @@
 // Every hook into the game lives in this file. Each one hands straight off to
 // mod code inside a try/catch, so a bug in the mod cannot take the game down.
 using System;
+using System.Reflection;
 using System.Text;
 using HarmonyLib;
 using Microsoft.Xna.Framework;
@@ -143,6 +144,39 @@ namespace SaltMap
         {
             try { MenuMap.AfterFindNearest(p, pSelItem, ref __result); }
             catch (Exception e) { Log.ErrorOnce("MenuMap nearest", e); }
+        }
+    }
+
+    // MonoGame leaves exclusive fullscreen whenever its window loses focus, also while the
+    // window is destroyed at exit, where DXGI refuses (see Fullscreen). A finalizer sees
+    // the exception; returning null swallows it.
+    [HarmonyPatch]
+    internal static class MinimizeFullScreenHook
+    {
+        static MethodBase Target()
+        {
+            return AccessTools.Method(AccessTools.TypeByName("MonoGame.Framework.WinFormsGameWindow"), "MinimizeFullScreen");
+        }
+
+        static bool Prepare() { return Target() != null; }   // skipped, not fatal, if MonoGame differs
+
+        static MethodBase TargetMethod() { return Target(); }
+
+        static Exception Finalizer(object __instance, Exception __exception)
+        {
+            try { return Fullscreen.AfterMinimize(__instance, __exception); }
+            catch (Exception e) { Log.ErrorOnce("Fullscreen minimize", e); return __exception; }
+        }
+    }
+
+    // The game's video setup, at startup and from the options menu.
+    [HarmonyPatch(typeof(Game1), "SetResolution", new[] { typeof(int), typeof(int), typeof(int), typeof(bool), typeof(int) })]
+    internal static class SetResolutionHook
+    {
+        static Exception Finalizer(Exception __exception, int width, int height, int fullScreen, bool vsync, int framerate)
+        {
+            try { return Fullscreen.AfterSetResolution(__exception, width, height, fullScreen, vsync, framerate); }
+            catch (Exception e) { Log.ErrorOnce("Fullscreen setup", e); return __exception; }
         }
     }
 }

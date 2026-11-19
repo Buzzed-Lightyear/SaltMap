@@ -4,7 +4,7 @@
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>SaltMap</AssemblyName>
     <RootNamespace>SaltMap</RootNamespace>
-    <Version>0.4.4</Version>
+    <Version>0.4.5</Version>
     <!-- salt.exe is a 32-bit assembly -->
     <PlatformTarget>x86</PlatformTarget>
     <!-- With the game installed, compile against it and install into it after each build.
@@ -21,6 +21,7 @@
   <ItemGroup>
     <!-- .NET Framework parts: GDI+ decodes the map tiles, the JSON reader parses markers.js. -->
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Runtime.Serialization" />
     <PackageReference Include="Lib.Harmony" Version="2.4.1" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
