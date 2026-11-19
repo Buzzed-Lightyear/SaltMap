@@ -1,142 +1,113 @@
-# SaltMap
+<h1 align="center">SaltMap</h1>
 
-A minimap and a full map page for **Salt and Sanctuary** (Steam, Windows).
+<p align="center">
+  <b>A minimap and a full world map for <i>Salt and Sanctuary</i>.</b><br>
+  Icons for items, bosses, NPCs and sanctuaries that clear as you play, and a ring on where to go next.
+</p>
 
-- **Minimap** in the top-right corner, tucked into the HUD's corner ornament, following
-  your character, with zoom levels.
-  - ![minimap](docs/mini-map.png)
-- **Map page** in the Escape menu (a new map icon after the bag, skull and gear): pan,
-  zoom, centre on yourself, and see the name of any icon.
-  - ![map](docs/menu-map.png)
-- **Icons** for items, NPCs, bosses and sanctuaries. Item and boss icons **disappear once
-  you have collected the item or beaten the boss**, and brands once you own them, read from
-  your save's own progress. NPCs show only where they currently are. Sanctuaries are named
-  after their area and the creed that holds them in your save.
-- **Filters** on the map page: all icons, items, bosses, NPCs, sanctuaries, enemies, or
-  just the map.
-- **Enemies** near you as red dots, bosses ringed. Hover one on the map page for its name
-  and health.
-- **Your marker** is a magenta diamond; a co-op partner shows in blue.
-- **Zoomed far out**, only the objectives' icons stay, so the whole map reads clearly.
-- **Where next:** the next objective on the main route (after the Fextralife wiki's Game
-  Progress Route) gets a gold ring on the map, and an arrow at the minimap's edge when it is
-  out of view. Optional bosses, NPC stories, notable items and hidden sanctuaries get silver
-  rings once they open up. Can be set to main route only, or off.
-- **Map page extras:** area names, and completion counts for items, bosses and sanctuaries.
-- Keyboard, mouse and **controller**, using buttons the game leaves free.
+<p align="center">
+  <a href="https://github.com/Buzzed-Lightyear/SaltMap/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Buzzed-Lightyear/SaltMap"></a>
+  <a href="https://github.com/Buzzed-Lightyear/SaltMap/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/Buzzed-Lightyear/SaltMap/total"></a>
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/github/license/Buzzed-Lightyear/SaltMap"></a>
+</p>
 
-The map pictures and icon positions come from the community **SSMap** web map; the
-installer downloads it from its own repository (see [Map data](#map-data)).
+<p align="center">
+  <a href="https://github.com/Buzzed-Lightyear/SaltMap/releases/latest"><b>Download</b></a> ·
+  <a href="#install">Install</a> ·
+  <a href="#controls">Controls</a> ·
+  <a href="#troubleshooting">Troubleshooting</a> ·
+  <a href="docs/README.md">Docs</a>
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/mini-map.png" alt="The minimap in the top-right corner of the HUD"></td>
+    <td width="50%"><img src="docs/menu-map.png" alt="The map page in the Escape menu, naming the icon under the cursor"></td>
+  </tr>
+  <tr>
+    <td align="center">The minimap, tucked into the HUD's corner</td>
+    <td align="center">The map page in the Escape menu</td>
+  </tr>
+</table>
+
+## Features
+
+- **Minimap** in the top-right corner that follows you, with several zoom levels.
+- **Map page** in the Escape menu, next to the bag, skull and gear: pan and zoom across
+  the whole world, with area names and the name of any icon you point at.
+- **Icons that keep up with your save.** Items and bosses disappear once you collect or
+  beat them. NPCs show where they stand now, and sanctuaries are named after their area
+  and the creed that holds them.
+- **Where next.** The next step of the main route gets a gold ring, with an arrow at the
+  minimap's edge when it is off screen. Optional bosses, side stories and hidden
+  sanctuaries get blue rings once they open up.
+- **Completion counts** for items, bosses and sanctuaries.
+- **Enemies** near you as red dots, with bosses ringed.
+- **Keyboard, mouse and controller**, on buttons the game leaves free.
 
 ## Install
 
-Download `SaltMap-<version>.zip` from the [Releases](../../releases) page, extract it,
-close the game and double-click **`Install.cmd`**. That's it: start the game.
+1. Download `SaltMap-<version>.zip` from the [latest release](https://github.com/Buzzed-Lightyear/SaltMap/releases/latest) and extract it.
+2. Close the game and double-click **`Install.cmd`**.
+3. Start the game. The minimap shows up in play; the map is the new icon in the Escape menu.
 
-The installer finds the game through Steam, patches `salt.exe` once (the original is kept
-as `salt.exe.orig`), copies the mod into the game's `Mods` folder, and on the first
-install downloads the map data (about 120 MB) into `Mods\SSMap`. Options, from PowerShell
-or after `Install.cmd`:
+The first install also downloads the map pictures (about 120 MB) from the SSMap project.
+After a Steam update of the game, run `Install.cmd` again.
 
-```powershell
-install.ps1 -GameDir "D:\Games\Salt and Sanctuary"   # if the game is not found
-install.ps1 -SsMap "D:\SSMap"                          # use a copy of SSMap you already have
-install.ps1 -NoMapDownload                             # skip the download
-```
+**Uninstall:** right-click `uninstall.ps1` in the same folder and choose *Run with
+PowerShell*. It puts the original game back.
 
-The mod writes `Mods\SaltMap.log` in the game folder. After a game update, run
-`Install.cmd` again: it patches the new `salt.exe`.
-
-**Uninstall:** run `uninstall.ps1` from the same zip (it puts the original `salt.exe`
-back), or use Steam's "Verify integrity of game files" and delete the `Mods` folder.
-
-## Map data
-
-SaltMap draws the [SSMap](https://kaszub09.github.io/SSMap/) interactive map, made by
-**Kaszub09** and contributors from the screenshot map of the whole world assembled by
-**[u/magicofgames](https://www.reddit.com/r/saltandsanctuary/comments/f0t1sa/ultimate_map_still_wip_well_no_but_actually_yes/)**.
-Its tiles, marker list and icons are read from a local copy at run time and are not part
-of this repository or its releases: SSMap has no licence, so SaltMap does not redistribute
-it. The installer fetches it straight from
-[github.com/Kaszub09/SSMap](https://github.com/Kaszub09/SSMap), pinned to the version
-SaltMap was tested with, and keeps `tiles\`, `markers.js` and `images\markerIcons\` in
-`Mods\SSMap` (with a `SOURCE.txt` saying where it came from). To use a copy elsewhere,
-set `ssmap=` in `Mods\SaltMap.ini` or pass `-SsMap`. Keep it for personal use.
+Installer options and the settings file: [docs/setup.md](docs/setup.md).
 
 ## Controls
 
 | | Keyboard / mouse | Controller |
-|---|---|---|
-| Show / hide the minimap | M | D-pad Up (steps near, middle, far, hidden) |
-| Zoom the minimap | `=` and `-` | D-pad Up |
-| Open the map page | Esc, then the map icon | Back / Select (in play or in the Esc menu) |
-| Pan | Arrows / WASD / drag | Left stick |
-| Zoom | Q E, mouse wheel | Right stick (smooth); LB RB, LT RT |
-| Change what is shown | F (Shift+F back) | D-pad left / right |
-| Guide: all, main only, off | G | Y |
+| --- | --- | --- |
+| Show / hide or zoom the minimap | M, `=` and `-` | D-pad Up (near, far, hidden) |
+| Open the map page | Esc, then the map icon | Back / Select |
+| Move around the map | Arrows, WASD or drag | Left stick |
+| Zoom the map | Q and E, mouse wheel | Right stick, or LB RB / LT RT |
+| Choose which icons show | F (Shift+F back) | D-pad left / right |
+| Guide: all, main route only, off | G | Y |
 | Centre on yourself | Space | A |
 | Back to the menu | Esc | B |
-| Close the menu | | Back / Select |
 
-## Settings
+## Troubleshooting
 
-`Mods\SaltMap.ini` is created on first start:
+**The game crashes with "Sorry, an error occurred" when you quit.**
+This is a bug in the game itself, not the mod. It happens in the game's exclusive
+fullscreen mode, and players have reported it on the game's Steam bug board since April
+2025 ([thread](https://steamcommunity.com/app/283640/discussions/2/592895054280977074/)).
+The same mode can also crash at launch when the game window is not in front. SaltMap 0.4.5
+and later work around both. You can also avoid them by setting the game's video option
+*Fullscreen* to *Borderless*. Details: [docs/fullscreen-crash.md](docs/fullscreen-crash.md).
 
-| Key | Meaning |
-|---|---|
-| `ssmap` | Folder of the SSMap copy; relative paths count from `Mods`. Default `SSMap`. |
-| `minimap` | `on` or `off` (also toggled in game). |
-| `minimapZoom` | 0 (far) to 7 (near) (also changed in game). |
-| `mapFilter` | What the map page shows, 0 (all) to 6 (map only) (also changed in game). |
-| `guide` | `all`, `main` or `off` (also changed in game). |
+**The installer can't find the game.**
+Open a command prompt in the extracted folder and run
+`Install.cmd -GameDir "D:\path\to\Salt and Sanctuary"`.
 
-## How it works
+**The minimap is gone after a game update.**
+The update replaced the game's `salt.exe`. Run `Install.cmd` again.
 
-- `Patcher/` builds `SaltPatcher.exe`, which adds one guarded call to the start of
-  `Game1.Initialize` in `salt.exe` that loads `Mods\SaltMap.dll`. If the mod is missing or
-  fails, the game starts anyway and writes `SaltMap-loader-error.log` in the game folder.
-- `Mod/` builds `SaltMap.dll`, which hooks the game at run time with
-  [Harmony](https://github.com/pardeike/Harmony). Nothing else in the game is changed.
-- Game positions are matched to SSMap's map by fitting the level's collision geometry to
-  the map pictures; icons are tied to the chests, bags and bosses they stand for to know
-  when they are done. Details in [docs/minimap.md](docs/minimap.md) and
-  [docs/rendering.md](docs/rendering.md).
-- The mod also sends the player position to UDP port 47800 on this computer, for an
-  optional live web-map tracker. Nothing leaves the machine.
-
-## Building from source
-
-Needs Windows, the [.NET SDK](https://dotnet.microsoft.com/download) and the game.
-
-```powershell
-powershell -ExecutionPolicy Bypass -File build.ps1            # finds the game through Steam
-powershell -ExecutionPolicy Bypass -File build.ps1 "D:\Games\Salt and Sanctuary"
-```
-
-This patches the game once and builds and installs the mod; close the game first. With the
-game installed the mod compiles against the real `salt.exe`. Without it (as on GitHub
-Actions) it compiles against `Reference/salt`, a stub that declares only the game members
-the mod uses (names and signatures, no game code), and MonoGame's NuGet package.
-After using new game members, update the stub and run `scripts\Check-Stubs.ps1`, which
-checks every reference and constant against the installed game.
-
-Releases: push a tag `v<version>` matching `<Version>` in `Mod/SaltMap.csproj`; the
-[release workflow](.github/workflows/release.yml) builds the zip and attaches it.
+**An icon or the guide looks wrong.**
+[Open an issue](https://github.com/Buzzed-Lightyear/SaltMap/issues) and attach
+`Mods\SaltMap.log` from the game folder. Opening the map page also writes
+`marker-status.tsv`, `save-flags.txt` and `guide-status.txt` there, which help too.
 
 ## Credits
 
-- [SSMap](https://github.com/Kaszub09/SSMap) by Kaszub09 and contributors: map tiles,
-  markers and icons.
-- The progression route: the [Fextralife Salt and Sanctuary wiki](https://saltandsanctuary.wiki.fextralife.com/Game_Progress_Route).
-- The original screenshot map of the world by
+- **Map pictures, icons and positions:** [SSMap](https://github.com/Kaszub09/SSMap) by
+  Kaszub09 and contributors, built on the screenshot map of the world by
   [u/magicofgames](https://www.reddit.com/r/saltandsanctuary/comments/f0t1sa/ultimate_map_still_wip_well_no_but_actually_yes/).
-- [Harmony](https://github.com/pardeike/Harmony) (MIT) and
-  [Mono.Cecil](https://github.com/jbevain/cecil) (MIT), included in the release zip.
-- [MonoGame](https://github.com/MonoGame/MonoGame) (MIT), used by the game.
+  SSMap has no licence, so SaltMap does not include it: the installer downloads it from
+  its own repository. Keep it for personal use.
+- **Main route** for the guide: the [Fextralife wiki's Game Progress Route](https://saltandsanctuary.wiki.fextralife.com/Game_Progress_Route).
+- [Harmony](https://github.com/pardeike/Harmony) and [Mono.Cecil](https://github.com/jbevain/cecil),
+  both MIT, ship in the release zip.
 
-SaltMap is a fan project, not affiliated with Ska Studios. It contains no game files.
+Curious how it works, or want to build it yourself? See the [docs](docs/README.md).
 
 ## License
 
-SaltMap's own code is [MIT licensed](LICENSE). The SSMap map data it downloads is not
-covered by this licence.
+SaltMap's own code is [MIT licensed](LICENSE); the downloaded SSMap data is not covered by
+it. SaltMap is a fan project, not affiliated with Ska Studios, and contains no game files.

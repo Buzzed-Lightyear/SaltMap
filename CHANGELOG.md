@@ -2,11 +2,28 @@
 
 Each release's section below is also its GitHub release notes.
 
+## 0.4.5
+
+Works around two crashes of the game's exclusive fullscreen mode (`fullscreen=1` in
+config.ini). Both are bugs in the game and MonoGame, not in SaltMap: players have reported
+the crash on quit on the game's Steam bug board since April 2025
+([thread](https://steamcommunity.com/app/283640/discussions/2/592895054280977074/)).
+Borderless never had them. Details: [docs/fullscreen-crash.md](https://github.com/Buzzed-Lightyear/SaltMap/blob/main/docs/fullscreen-crash.md).
+
+- Quitting no longer ends with a "Sorry, an error occurred" box. Leaving exclusive
+  fullscreen fails while the game window closes; that failure is now ignored so the game
+  exits normally.
+- When the game cannot take over the screen at startup, it starts in Borderless instead of
+  crashing (after its own retries, about 20 seconds).
+- The README is rewritten for players; installer options, settings and technical notes
+  moved to [docs](https://github.com/Buzzed-Lightyear/SaltMap/blob/main/docs/README.md).
+
 ## 0.4.4
 
 Everything since 0.2.1 (0.3.0 and the 0.4.x steps were not released separately).
 
 ### Where next
+
 - A guide to the next objective, after the Fextralife wiki's Game Progress Route: the next
   main-route boss or brand gets a pulsing gold ring on the map, and an arrow at the edge of
   the minimap or map page when it is out of view.
@@ -20,6 +37,7 @@ Everything since 0.2.1 (0.3.0 and the 0.4.x steps were not released separately).
 - G (keyboard) or Y (controller) on the map page cycles: main and optional, main only, off.
 
 ### Map page
+
 - A panel under the menu with completion counts (items, bosses, claimed sanctuaries), the
   next objective and the open optional ones.
 - Area names on the map.
@@ -30,6 +48,7 @@ Everything since 0.2.1 (0.3.0 and the 0.4.x steps were not released separately).
   objective.
 
 ### Icons
+
 - NPCs show only where they stand now in your save (they move as the story goes on).
 - Sanctuaries are named after their area and the creed that holds them in your save,
   instead of "Empty Sanctuary", with a creed icon once claimed.
@@ -40,6 +59,7 @@ Everything since 0.2.1 (0.3.0 and the 0.4.x steps were not released separately).
 - SSMap's boat markers, which sat off the edge of the map, are gone.
 
 ### Diagnostics
+
 - Opening the map page writes `Mods\marker-status.tsv`, `Mods\save-flags.txt` and
   `Mods\guide-status.txt`, for tracing an icon or objective that looks wrong.
 

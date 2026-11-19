@@ -19,7 +19,8 @@ Remove
 
 After a game update, run Install.cmd again: it re-patches the new salt.exe.
 
-Controls, settings and details: see the project README on GitHub.
+Controls and troubleshooting: https://github.com/Buzzed-Lightyear/SaltMap
+Settings and installer options: https://github.com/Buzzed-Lightyear/SaltMap/blob/main/docs/setup.md
 
 Map credits: the SSMap interactive map (https://github.com/Kaszub09/SSMap) by Kaszub09 and
 contributors, made from the screenshot map of the world by u/magicofgames
